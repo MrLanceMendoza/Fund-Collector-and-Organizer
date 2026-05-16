@@ -3,6 +3,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -205,13 +207,13 @@ public class GovernmentSystem extends JFrame {
           {
         	  // Load the image with fallback handling
         	  try {
-        	      ImageIcon icon = new ImageIcon("D:\\Lance Mendoza\\GMS background.jpg");
-        	      if (icon.getImage() != null && icon.getImage() instanceof Image) {
-        	          backgroundImage = icon.getImage();
-        	      }
-        	  } catch (Exception e) {
-        	      System.err.println("Warning: Background image not found. Using blank background.");
-        	  }
+         	      ImageIcon icon = loadIcon("IMAGES/GMS background.jpg");
+         	      if (icon != null && icon.getImage() != null) {
+         	          backgroundImage = icon.getImage();
+         	      }
+         	  } catch (Exception e) {
+         	      System.err.println("Warning: Background image not found. Using blank background.");
+         	  }
           }
           
           protected void paintComponent(Graphics g) {
@@ -220,7 +222,9 @@ public class GovernmentSystem extends JFrame {
               g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
               // Draw the image
-              g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+              if (backgroundImage != null) {
+                  g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+              }
           }
       };
       
@@ -432,11 +436,11 @@ private void createMainApplicationPage() {
    final int ICON_SIZE = 24;
    
    // Load and resize icons with null safety (replace paths with your actual icon paths)
-   ImageIcon deptIcon = resizeIcon("C:\\Users\\Lance Mendoza\\OneDrive\\Pictures\\Icon Images\\Screenshot 2025-06-04 003415.png", ICON_SIZE, ICON_SIZE);
-   ImageIcon projectIcon = resizeIcon("C:\\Users\\Lance Mendoza\\OneDrive\\Pictures\\Icon Images\\Screenshot 2025-06-04 004237.png", ICON_SIZE, ICON_SIZE);
-   ImageIcon citizenIcon = resizeIcon("C:\\Users\\Lance Mendoza\\OneDrive\\Pictures\\Icon Images\\Screenshot 2025-06-04 004404.png", ICON_SIZE, ICON_SIZE);
-   ImageIcon issueIcon = resizeIcon("C:\\Users\\Lance Mendoza\\OneDrive\\Pictures\\Icon Images\\Screenshot 2025-06-04 004744.png", ICON_SIZE, ICON_SIZE);
-   ImageIcon reportIcon = resizeIcon("C:\\Users\\Lance Mendoza\\OneDrive\\Pictures\\Icon Images\\Screenshot 2025-06-04 004502.png", ICON_SIZE, ICON_SIZE);
+   ImageIcon deptIcon = resizeIcon("IMAGES/DepartmentIcon.png", ICON_SIZE, ICON_SIZE);
+   ImageIcon projectIcon = resizeIcon("IMAGES/ProjectIcon.png", ICON_SIZE, ICON_SIZE);
+   ImageIcon citizenIcon = resizeIcon("IMAGES/CitizenIcon.png", ICON_SIZE, ICON_SIZE);
+   ImageIcon issueIcon = resizeIcon("IMAGES/IssueIcon.png", ICON_SIZE, ICON_SIZE);
+   ImageIcon reportIcon = resizeIcon("IMAGES/ReportIcon.png", ICON_SIZE, ICON_SIZE);
    
    // Set icons for each tab only if icons loaded successfully
    if (deptIcon != null) tabbedPane.setIconAt(0, deptIcon);
@@ -465,17 +469,37 @@ private void createMainApplicationPage() {
 }
 
 //Add this helper method to your GovernmentSystem class:
+private ImageIcon loadIcon(String path) {
+   try {
+       File file = new File(path);
+       if (!file.isAbsolute()) {
+           file = Paths.get(System.getProperty("user.dir"), path).toFile();
+       }
+       if (file.exists()) {
+           return new ImageIcon(file.getAbsolutePath());
+       }
+       
+       // Fallback to classpath resource if the file is not found on disk
+       java.net.URL resource = getClass().getResource('/' + path.replace('\\', '/'));
+       if (resource != null) {
+           return new ImageIcon(resource);
+       }
+       System.err.println("Warning: Icon file not found: " + file.getAbsolutePath());
+   } catch (Exception e) {
+       System.err.println("Error loading icon: " + path + " - " + e.getMessage());
+   }
+   return null;
+}
+
 private ImageIcon resizeIcon(String path, int width, int height) {
    try {
-       // Load the original image
-       ImageIcon originalIcon = new ImageIcon(path);
-       Image originalImage = originalIcon.getImage();
-       
-       // Check if image loaded successfully
-       if (originalImage == null || originalImage.getWidth(null) <= 0) {
+       // Load the original image from a relative project path or classpath
+       ImageIcon originalIcon = loadIcon(path);
+       if (originalIcon == null || originalIcon.getImage() == null || originalIcon.getIconWidth() <= 0) {
            System.err.println("Warning: Icon not found or invalid: " + path);
            return null;
        }
+       Image originalImage = originalIcon.getImage();
        
        // Scale it smoothly to the desired size
        Image resizedImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
@@ -483,7 +507,7 @@ private ImageIcon resizeIcon(String path, int width, int height) {
        // Return the resized icon
        return new ImageIcon(resizedImage);
    } catch (Exception e) {
-       System.err.println("Error loading icon: " + path);
+       System.err.println("Error loading icon: " + path + " - " + e.getMessage());
        return null;
    }
 }
